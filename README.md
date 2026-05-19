@@ -60,6 +60,24 @@ Añadí (ajustá la ruta):
 
 Esto ejecuta un chequeo cada 5 minutos solo durante la hora 00:xx (según la TZ del sistema).
 
+### Opción D: GitHub Actions (recomendado para deploy)
+
+El workflow [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-monitor.yml) corre **cada día a las 00:00** (`Europe/Berlin`) y ejecuta la ventana de 1 h (12 chequeos cada 5 min).
+
+**1. Configurá secrets** en el repo → **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret | Valor |
+|--------|--------|
+| `SMTP_USER` | Tu Gmail |
+| `SMTP_PASSWORD` | [Contraseña de aplicación](https://myaccount.google.com/apppasswords) |
+| `NOTIFY_EMAIL` | *(opcional)* `jessica.francavilla86@gmail.com` |
+
+**2. Activá Actions** en **Settings → Actions → General** (permitir workflows).
+
+**3. Probar manualmente:** pestaña **Actions** → **Turnos monitor** → **Run workflow** → elegí `pilot` (solo API) o `once` (un chequeo + email si hay turnos).
+
+Los cron de GitHub pueden demorarse unos minutos; no son exactos al segundo.
+
 ## Prueba piloto (API en vivo, sin email)
 
 ```bash
@@ -74,7 +92,7 @@ Muestra estado HTTP, cada punto de atención y el JSON completo.
 python -m unittest discover -s tests -v
 ```
 
-24 tests unitarios (API, checker, config, email, ventana horaria, piloto).
+25 tests unitarios (API, checker, config, email, ventana horaria, piloto).
 
 ## Variables de entorno
 
