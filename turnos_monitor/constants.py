@@ -4,9 +4,7 @@ DEFAULT_API_URL = (
 DEFAULT_TRAMITE_ID = 3354
 DEFAULT_PROVINCIA = 100
 DEFAULT_LOCALIDAD = 2911
-DEFAULT_TIMEZONE = "Europe/Berlin"
-DEFAULT_NOTIFY_EMAIL = "jessica.francavilla86@gmail.com"
-
+DEFAULT_TIMEZONE = "Europe/Rome"
 # Ventana diaria: 00:00–01:00 hora local, cada 5 minutos
 WINDOW_START_HOUR = 0
 WINDOW_START_MINUTE = 0

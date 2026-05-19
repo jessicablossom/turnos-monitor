@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 from turnos_monitor.constants import (
     DEFAULT_API_URL,
     DEFAULT_LOCALIDAD,
-    DEFAULT_NOTIFY_EMAIL,
     DEFAULT_PROVINCIA,
     DEFAULT_TIMEZONE,
     DEFAULT_TRAMITE_ID,
@@ -54,7 +53,7 @@ def load_settings(env_path: str | None = None) -> Settings:
         provincia=int(os.environ.get("PROVINCIA", DEFAULT_PROVINCIA)),
         localidad=int(os.environ.get("LOCALIDAD", DEFAULT_LOCALIDAD)),
         timezone=os.environ.get("TIMEZONE", DEFAULT_TIMEZONE),
-        notify_email=os.environ.get("NOTIFY_EMAIL", DEFAULT_NOTIFY_EMAIL),
+        notify_email=os.environ.get("NOTIFY_EMAIL", smtp_user),
         smtp_host=os.environ.get("SMTP_HOST", "smtp.gmail.com"),
         smtp_port=int(os.environ.get("SMTP_PORT", "587")),
         smtp_user=smtp_user,

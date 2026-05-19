@@ -1,90 +1,46 @@
-# Monitor de turnos – Consulado Milán
+# turnos-monitor
 
-Mini app en Python que, **cada día de 00:00 a 01:00** (hora de Europa Central, `Europe/Berlin` — incluye CET y CEST), consulta la API de turnos **cada 5 minutos** y te envía un email si algún punto tiene `"disponible": true`.
+Python app that polls the Argentina consulate appointment API **daily from 00:00 to 01:00** (`Europe/Berlin`) **every 5 minutes** and sends an email when any location has `"disponible": true`.
 
-## Requisitos
+**Default target:** Milan consulate (`tramiteId=3354`, `provincia=100`, `localidad=2911`).
 
-- Python 3.9+
-- Cuenta Gmail con [contraseña de aplicación](https://myaccount.google.com/apppasswords) (o otro SMTP)
+## Deploy (GitHub Actions)
 
-## Instalación
+Workflow: [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-monitor.yml) — runs at **00:00 Europe/Berlin** and executes the 1-hour check window.
+
+**Secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Description |
+|--------|-------------|
+| `SMTP_USER` | Sender Gmail address |
+| `SMTP_PASSWORD` | [Gmail app password](https://myaccount.google.com/apppasswords) |
+| `NOTIFY_EMAIL` | *(optional)* Recipient; defaults to `SMTP_USER` if unset |
+
+**Manual run:** Actions → **Turnos monitor** → **Run workflow** → `pilot` (API only), `once`, or `window`.
+
+## Local setup
 
 ```bash
-cd ~/turnos-monitor
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
-# Editá .env con SMTP_USER y SMTP_PASSWORD
+cp .env.example .env   # set SMTP_USER and SMTP_PASSWORD
 ```
 
-## Uso
+Use `.venv/bin/python` if `python` is not on your PATH.
 
-| Comando | Descripción |
+## Commands
+
+| Command | Description |
 |---------|-------------|
-| `python -m turnos_monitor once` | Un chequeo ahora (prueba) |
-| `python -m turnos_monitor window` | 12 chequeos en 1 h (para lanzar a las 00:00) |
-| `python -m turnos_monitor daemon` | Proceso 24/7; ventana automática cada medianoche |
-| `python -m turnos_monitor run-if-window` | Solo corre si es entre 00:00 y 01:00 |
-
-### Opción A: Daemon (Mac siempre encendida)
-
-```bash
-source .venv/bin/activate
-python -m turnos_monitor daemon
-```
-
-Dejalo corriendo con `tmux`, `screen`, o como servicio de macOS.
-
-### Opción B: Cron (sin proceso 24/7)
-
-A las 00:00 lanza la ventana de 1 hora:
-
-```bash
-crontab -e
-```
-
-Añadí (ajustá la ruta):
-
-```cron
-0 0 * * * cd /Users/jessica/turnos-monitor && .venv/bin/python -m turnos_monitor window >> /tmp/turnos-monitor.log 2>&1
-```
-
-**Nota:** `cron` en macOS usa la zona horaria del sistema. Configurá macOS en `Europe/Berlin` o usá `daemon` para manejar CET/CEST con precisión.
-
-### Opción C: Cron cada 5 min (solo en la hora correcta)
-
-```cron
-*/5 0 * * * cd /Users/jessica/turnos-monitor && .venv/bin/python -m turnos_monitor run-if-window >> /tmp/turnos-monitor.log 2>&1
-```
-
-Esto ejecuta un chequeo cada 5 minutos solo durante la hora 00:xx (según la TZ del sistema).
-
-### Opción D: GitHub Actions (recomendado para deploy)
-
-El workflow [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-monitor.yml) corre **cada día a las 00:00** (`Europe/Berlin`) y ejecuta la ventana de 1 h (12 chequeos cada 5 min).
-
-**1. Configurá secrets** en el repo → **Settings → Secrets and variables → Actions → New repository secret**:
-
-| Secret | Valor |
-|--------|--------|
-| `SMTP_USER` | Tu Gmail |
-| `SMTP_PASSWORD` | [Contraseña de aplicación](https://myaccount.google.com/apppasswords) |
-| `NOTIFY_EMAIL` | *(opcional)* `jessica.francavilla86@gmail.com` |
-
-**2. Activá Actions** en **Settings → Actions → General** (permitir workflows).
-
-**3. Probar manualmente:** pestaña **Actions** → **Turnos monitor** → **Run workflow** → elegí `pilot` (solo API) o `once` (un chequeo + email si hay turnos).
-
-Los cron de GitHub pueden demorarse unos minutos; no son exactos al segundo.
-
-## Prueba piloto (API en vivo, sin email)
+| `pilot` | Live API test, no email |
+| `once` | Single check |
+| `window` | 12 checks over 1 h (every 5 min) |
+| `daemon` | 24/7 scheduler (local) |
 
 ```bash
 python -m turnos_monitor pilot
+python -m turnos_monitor once
 ```
-
-Muestra estado HTTP, cada punto de atención y el JSON completo.
 
 ## Tests
 
@@ -92,20 +48,10 @@ Muestra estado HTTP, cada punto de atención y el JSON completo.
 python -m unittest discover -s tests -v
 ```
 
-25 tests unitarios (API, checker, config, email, ventana horaria, piloto).
-
-## Variables de entorno
-
-Ver `.env.example`. Lo mínimo:
-
-- `SMTP_USER` – email desde el que se envía (ej. tu Gmail)
-- `SMTP_PASSWORD` – contraseña de aplicación
-- `NOTIFY_EMAIL` – destino (por defecto: jessica.francavilla86@gmail.com)
-
-## API monitoreada
+## API
 
 ```
-https://turnos-api.argentina.gob.ar/api/v1.0/disponibilidad/puntosatencion?tramiteId=3354&provincia=100&localidad=2911
+GET .../disponibilidad/puntosatencion?tramiteId=3354&provincia=100&localidad=2911
 ```
 
-Se considera disponible cuando **cualquier** elemento en `result` tiene `"disponible": true`.
+Available when any item in `result` has `"disponible": true`.
