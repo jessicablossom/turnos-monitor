@@ -31,7 +31,7 @@ def make_settings(**overrides: Any) -> Settings:
         "tramite_id": 3354,
         "provincia": 100,
         "localidad": 2911,
-        "timezone": "Europe/Berlin",
+        "timezone": "Europe/Rome",
         "notify_email": "test@example.com",
         "smtp_host": "smtp.gmail.com",
         "smtp_port": 587,

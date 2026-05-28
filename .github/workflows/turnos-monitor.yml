@@ -2,9 +2,9 @@ name: Turnos monitor
 
 on:
   schedule:
-    # 00:00 Europa Central (CET/CEST automático)
+    # 00:00 hora de Roma (CET/CEST automático)
     - cron: "0 0 * * *"
-      timezone: Europe/Berlin
+      timezone: Europe/Rome
   workflow_dispatch:
     inputs:
       command:
@@ -60,5 +60,5 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
-          TIMEZONE: Europe/Berlin
+          TIMEZONE: Europe/Rome
         run: python -m turnos_monitor ${{ steps.cmd.outputs.value }}

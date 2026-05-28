@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import logging
+import smtplib
 import sys
 from datetime import datetime
 
 from turnos_monitor.checker import run_single_check
-from turnos_monitor.config import load_settings
+from turnos_monitor.config import Settings, load_settings
+from turnos_monitor.email_notifier import send_run_summary_email
 from turnos_monitor.pilot import format_pilot_report, run_pilot
 from turnos_monitor.scheduler_app import start_scheduler
 from turnos_monitor.window import is_within_daily_window, run_window_checks
@@ -39,7 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub.add_parser(
         "daemon",
-        help="Proceso 24/7; dispara la ventana cada día a las 00:00 CET/CEST",
+        help="Proceso 24/7; dispara la ventana cada día a las 00:00 (Europe/Rome)",
     )
 
     run_if = sub.add_parser(
@@ -53,6 +55,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     return parser
+
+
+def _run_once_with_summary(settings: Settings) -> None:
+    result = run_single_check(settings, index=1, total=1)
+    try:
+        send_run_summary_email(settings, [result])
+    except (smtplib.SMTPException, OSError) as error:
+        logging.error("Error al enviar email de resumen: %s", error)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -76,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.command == "once":
-        run_single_check(settings)
+        _run_once_with_summary(settings)
         return 0
 
     if args.command == "window":

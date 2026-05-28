@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def start_scheduler(settings: Settings) -> None:
     """
-    Proceso en segundo plano: cada día a las 00:00 (CET/CEST) lanza la ventana de 1 h.
+    Proceso en segundo plano: cada día a las 00:00 (Europe/Rome) lanza la ventana de 1 h.
     """
     scheduler = BlockingScheduler(timezone=settings.timezone)
 

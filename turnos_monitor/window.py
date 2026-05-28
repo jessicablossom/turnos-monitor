@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
+import smtplib
 import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from turnos_monitor.check_result import CheckOutcome, CheckResult
 from turnos_monitor.checker import run_single_check
 from turnos_monitor.config import Settings
 from turnos_monitor.constants import (
@@ -13,6 +15,7 @@ from turnos_monitor.constants import (
     WINDOW_START_HOUR,
     WINDOW_START_MINUTE,
 )
+from turnos_monitor.email_notifier import send_run_summary_email
 
 logger = logging.getLogger(__name__)
 
@@ -46,14 +49,17 @@ def seconds_until_window_start(now: datetime, settings: Settings) -> float:
     return (target - local).total_seconds()
 
 
-def run_window_checks(settings: Settings, stop_on_success: bool = False) -> int:
+def run_window_checks(
+    settings: Settings,
+    stop_on_success: bool = False,
+) -> list[CheckResult]:
     """
     Ejecuta consultas cada 5 minutos durante 1 hora (12 chequeos).
-    Devuelve la cantidad de emails enviados.
+    Al terminar envía un email con el resumen de todas las consultas.
     """
     interval_seconds = CHECK_INTERVAL_MINUTES * 60
     checks_count = WINDOW_DURATION_MINUTES // CHECK_INTERVAL_MINUTES
-    emails_sent = 0
+    results: list[CheckResult] = []
 
     logger.info(
         "Iniciando ventana: %d chequeos cada %d min",
@@ -62,14 +68,28 @@ def run_window_checks(settings: Settings, stop_on_success: bool = False) -> int:
     )
 
     for index in range(checks_count):
-        logger.info("Chequeo %d/%d", index + 1, checks_count)
-        if run_single_check(settings):
-            emails_sent += 1
-            if stop_on_success:
-                logger.info("Turnos encontrados; deteniendo ventana")
-                break
+        check_number = index + 1
+        logger.info("Chequeo %d/%d", check_number, checks_count)
+        result = run_single_check(
+            settings,
+            index=check_number,
+            total=checks_count,
+        )
+        results.append(result)
+
+        if stop_on_success and result.outcome is CheckOutcome.AVAILABLE:
+            logger.info("Turnos encontrados; deteniendo ventana")
+            break
 
         if index < checks_count - 1:
             time.sleep(interval_seconds)
 
-    return emails_sent
+    _send_window_summary(settings, results)
+    return results
+
+
+def _send_window_summary(settings: Settings, results: list[CheckResult]) -> None:
+    try:
+        send_run_summary_email(settings, results)
+    except (smtplib.SMTPException, OSError) as error:
+        logger.error("Error al enviar email de resumen: %s", error)

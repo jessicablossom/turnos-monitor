@@ -4,7 +4,14 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from tests.helpers import make_settings
-from turnos_monitor.email_notifier import format_points_html, send_availability_email
+from turnos_monitor.check_result import CheckOutcome, CheckResult
+from turnos_monitor.email_notifier import (
+    SUMMARY_SUBJECT_AVAILABLE,
+    SUMMARY_SUBJECT_UNAVAILABLE,
+    format_points_html,
+    send_availability_email,
+    send_run_summary_email,
+)
 
 
 class TestEmailNotifier(unittest.TestCase):
@@ -39,6 +46,49 @@ class TestEmailNotifier(unittest.TestCase):
         mock_server.sendmail.assert_called_once()
         recipients = mock_server.sendmail.call_args[0][1]
         self.assertEqual(recipients, ["jessica@test.com"])
+
+    @patch("turnos_monitor.email_notifier._send_email")
+    def test_send_run_summary_email_unavailable(
+        self,
+        mock_send: MagicMock,
+    ) -> None:
+        settings = make_settings()
+        results = [
+            CheckResult(1, 2, CheckOutcome.UNAVAILABLE, "sin turnos"),
+            CheckResult(2, 2, CheckOutcome.UNAVAILABLE, "sin turnos"),
+        ]
+
+        send_run_summary_email(settings, results)
+
+        mock_send.assert_called_once()
+        kwargs = mock_send.call_args.kwargs
+        self.assertEqual(kwargs["subject"], SUMMARY_SUBJECT_UNAVAILABLE)
+        self.assertIn("Consulta 1/2", kwargs["body_text"])
+        self.assertIn("Resultado negativo", kwargs["body_text"])
+
+    @patch("turnos_monitor.email_notifier._send_email")
+    def test_send_run_summary_email_available(
+        self,
+        mock_send: MagicMock,
+    ) -> None:
+        settings = make_settings()
+        results = [
+            CheckResult(
+                1,
+                1,
+                CheckOutcome.AVAILABLE,
+                "1 punto(s): Milán",
+                available_points=({"nombre": "Milán"},),
+            ),
+        ]
+
+        send_run_summary_email(settings, results)
+
+        mock_send.assert_called_once()
+        kwargs = mock_send.call_args.kwargs
+        self.assertEqual(kwargs["subject"], SUMMARY_SUBJECT_AVAILABLE)
+        self.assertIn("Resultado positivo", kwargs["body_text"])
+        self.assertIn("Milán", kwargs["body_html"])
 
 
 if __name__ == "__main__":

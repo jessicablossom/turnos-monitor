@@ -6,31 +6,29 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from tests.helpers import make_settings
+from turnos_monitor.check_result import CheckOutcome
 from turnos_monitor.checker import run_single_check
 
 
 class TestChecker(unittest.TestCase):
-    @patch("turnos_monitor.checker.send_availability_email")
     @patch("turnos_monitor.checker.fetch_availability")
-    def test_returns_false_when_no_availability(
+    def test_returns_unavailable_when_empty(
         self,
         mock_fetch: MagicMock,
-        mock_email: MagicMock,
     ) -> None:
         mock_fetch.return_value = []
         settings = make_settings()
 
-        result = run_single_check(settings)
+        result = run_single_check(settings, index=3, total=12)
 
-        self.assertFalse(result)
-        mock_email.assert_not_called()
+        self.assertEqual(result.outcome, CheckOutcome.UNAVAILABLE)
+        self.assertEqual(result.index, 3)
+        self.assertEqual(result.total, 12)
 
-    @patch("turnos_monitor.checker.send_availability_email")
     @patch("turnos_monitor.checker.fetch_availability")
-    def test_returns_true_and_sends_email_when_available(
+    def test_returns_available_with_points(
         self,
         mock_fetch: MagicMock,
-        mock_email: MagicMock,
     ) -> None:
         available = [{"disponible": True, "nombre": "Milán"}]
         mock_fetch.return_value = available
@@ -38,38 +36,22 @@ class TestChecker(unittest.TestCase):
 
         result = run_single_check(settings)
 
-        self.assertTrue(result)
-        mock_email.assert_called_once_with(settings, available)
+        self.assertEqual(result.outcome, CheckOutcome.AVAILABLE)
+        self.assertEqual(len(result.available_points), 1)
+        self.assertIn("Milán", result.detail)
 
-    @patch("turnos_monitor.checker.send_availability_email")
     @patch("turnos_monitor.checker.fetch_availability")
-    def test_returns_false_on_api_error(
+    def test_returns_api_error(
         self,
         mock_fetch: MagicMock,
-        mock_email: MagicMock,
     ) -> None:
         mock_fetch.side_effect = requests.HTTPError("503")
         settings = make_settings()
 
         result = run_single_check(settings)
 
-        self.assertFalse(result)
-        mock_email.assert_not_called()
-
-    @patch("turnos_monitor.checker.send_availability_email")
-    @patch("turnos_monitor.checker.fetch_availability")
-    def test_returns_false_on_smtp_error(
-        self,
-        mock_fetch: MagicMock,
-        mock_email: MagicMock,
-    ) -> None:
-        mock_fetch.return_value = [{"disponible": True}]
-        mock_email.side_effect = OSError("SMTP down")
-        settings = make_settings()
-
-        result = run_single_check(settings)
-
-        self.assertFalse(result)
+        self.assertEqual(result.outcome, CheckOutcome.API_ERROR)
+        self.assertIn("503", result.detail)
 
 
 if __name__ == "__main__":

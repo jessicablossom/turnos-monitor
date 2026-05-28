@@ -1,12 +1,12 @@
 # turnos-monitor
 
-Python app that polls the Argentina consulate appointment API **daily from 00:00 to 01:00** (`Europe/Berlin`) **every 5 minutes** and sends an email when any location has `"disponible": true`.
+Python app that polls the Argentina consulate appointment API **daily from 00:00 to 01:00** (`Europe/Rome`) **every 5 minutes** and, when the run finishes, sends a **summary email** listing each check and its result (available, unavailable, or API error).
 
 **Default target:** Milan consulate (`tramiteId=3354`, `provincia=100`, `localidad=2911`).
 
 ## Deploy (GitHub Actions)
 
-Workflow: [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-monitor.yml) — runs at **00:00 Europe/Berlin** and executes the 1-hour check window.
+Workflow: [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-monitor.yml) — runs at **00:00 Europe/Rome** and executes the 1-hour check window.
 
 **Secrets** (Settings → Secrets and variables → Actions):
 
@@ -33,8 +33,8 @@ Use `.venv/bin/python` if `python` is not on your PATH.
 | Command | Description |
 |---------|-------------|
 | `pilot` | Live API test, no email |
-| `once` | Single check |
-| `window` | 12 checks over 1 h (every 5 min) |
+| `once` | Single check + summary email |
+| `window` | 12 checks over 1 h (every 5 min) + summary email |
 | `daemon` | 24/7 scheduler (local) |
 
 ```bash
