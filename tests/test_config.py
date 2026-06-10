@@ -59,10 +59,28 @@ class TestConfig(unittest.TestCase):
             with patch("turnos_monitor.config.load_dotenv"):
                 with self.assertRaises(ValueError) as ctx:
                     load_settings()
-                self.assertIn("SMTP", str(ctx.exception))
+                self.assertIn("SMTP_USER", str(ctx.exception))
+                self.assertIn("SMTP_PASSWORD", str(ctx.exception))
         finally:
             restore_env(previous)
             for key in ("SMTP_USER", "SMTP_PASSWORD"):
+                os.environ.pop(key, None)
+
+    def test_load_settings_raises_with_github_actions_hint(self) -> None:
+        previous = patch_env(
+            SMTP_USER="",
+            SMTP_PASSWORD="",
+            GITHUB_ACTIONS="true",
+        )
+        try:
+            with patch("turnos_monitor.config.load_dotenv"):
+                with self.assertRaises(ValueError) as ctx:
+                    load_settings()
+                self.assertIn("GitHub Actions", str(ctx.exception))
+                self.assertIn("apppasswords", str(ctx.exception))
+        finally:
+            restore_env(previous)
+            for key in ("SMTP_USER", "SMTP_PASSWORD", "GITHUB_ACTIONS"):
                 os.environ.pop(key, None)
 
 

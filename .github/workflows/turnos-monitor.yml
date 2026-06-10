@@ -54,6 +54,20 @@ jobs:
         if: steps.cmd.outputs.value == 'pilot'
         run: python -m turnos_monitor pilot
 
+      - name: Validar secrets SMTP
+        if: steps.cmd.outputs.value != 'pilot'
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: |
+          missing=()
+          [ -z "$SMTP_USER" ] && missing+=("SMTP_USER")
+          [ -z "$SMTP_PASSWORD" ] && missing+=("SMTP_PASSWORD")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Faltan secrets en el repo: ${missing[*]}. Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+
       - name: Validar configuración SMTP
         if: steps.cmd.outputs.value != 'pilot'
         env:

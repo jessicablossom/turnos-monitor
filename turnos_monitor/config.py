@@ -37,16 +37,34 @@ class Settings:
         }
 
 
+def _smtp_missing_message(smtp_user: str, smtp_password: str) -> str:
+    missing: list[str] = []
+    if not smtp_user:
+        missing.append("SMTP_USER")
+    if not smtp_password:
+        missing.append("SMTP_PASSWORD")
+
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return (
+            f"Faltan los secrets de GitHub Actions: {', '.join(missing)}. "
+            "Configuralos en el repo: Settings → Secrets and variables → Actions "
+            "→ New repository secret. Para Gmail usá una contraseña de aplicación "
+            "(no la contraseña normal): https://myaccount.google.com/apppasswords"
+        )
+
+    return (
+        f"Faltan {', '.join(missing)} en .env "
+        "(para Gmail, usá una contraseña de aplicación)"
+    )
+
+
 def load_settings(env_path: str | None = None) -> Settings:
     load_dotenv(env_path)
 
     smtp_user = env_or_default("SMTP_USER", "")
     smtp_password = env_or_default("SMTP_PASSWORD", "").replace(" ", "")
     if not smtp_password or not smtp_user:
-        raise ValueError(
-            "Faltan SMTP_USER y SMTP_PASSWORD en .env "
-            "(para Gmail, usá una contraseña de aplicación)"
-        )
+        raise ValueError(_smtp_missing_message(smtp_user, smtp_password))
 
     notify_email = env_or_default("NOTIFY_EMAIL", smtp_user)
     if "@" not in notify_email:
