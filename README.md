@@ -8,7 +8,7 @@ Python app that polls the Argentina consulate appointment API **daily from 00:00
 
 Workflow: [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-monitor.yml) — runs at **00:00 Europe/Rome** and executes the 1-hour check window.
 
-**Secrets** (Settings → Secrets and variables → Actions):
+**Secrets** (Settings → Environments → **LIVE** → Environment secrets):
 
 | Secret | Description |
 |--------|-------------|

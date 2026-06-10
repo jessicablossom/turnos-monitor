@@ -77,7 +77,7 @@ class TestConfig(unittest.TestCase):
                 with self.assertRaises(ValueError) as ctx:
                     load_settings()
                 self.assertIn("GitHub Actions", str(ctx.exception))
-                self.assertIn("apppasswords", str(ctx.exception))
+                self.assertIn("LIVE", str(ctx.exception))
         finally:
             restore_env(previous)
             for key in ("SMTP_USER", "SMTP_PASSWORD", "GITHUB_ACTIONS"):

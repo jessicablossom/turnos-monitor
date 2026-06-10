@@ -47,8 +47,8 @@ def _smtp_missing_message(smtp_user: str, smtp_password: str) -> str:
     if os.environ.get("GITHUB_ACTIONS") == "true":
         return (
             f"Faltan los secrets de GitHub Actions: {', '.join(missing)}. "
-            "Configuralos en el repo: Settings → Secrets and variables → Actions "
-            "→ New repository secret. Para Gmail usá una contraseña de aplicación "
+            "Configuralos en Settings → Environments → LIVE → Environment secrets "
+            "(o como repository secrets). Para Gmail usá una contraseña de aplicación "
             "(no la contraseña normal): https://myaccount.google.com/apppasswords"
         )
 

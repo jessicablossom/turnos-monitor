@@ -24,6 +24,7 @@ concurrency:
 jobs:
   monitor:
     runs-on: ubuntu-latest
+    environment: LIVE
     # window = 12 chequeos × 5 min ≈ 55 min de espera + llamadas API
     timeout-minutes: 90
 
@@ -64,7 +65,7 @@ jobs:
           [ -z "$SMTP_USER" ] && missing+=("SMTP_USER")
           [ -z "$SMTP_PASSWORD" ] && missing+=("SMTP_PASSWORD")
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Faltan secrets en el repo: ${missing[*]}. Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::Faltan secrets en el environment LIVE: ${missing[*]}. Settings → Environments → LIVE → Environment secrets"
             exit 1
           fi
 
