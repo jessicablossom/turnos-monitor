@@ -54,6 +54,20 @@ jobs:
         if: steps.cmd.outputs.value == 'pilot'
         run: python -m turnos_monitor pilot
 
+      - name: Validar configuración SMTP
+        if: steps.cmd.outputs.value != 'pilot'
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          TIMEZONE: Europe/Rome
+        run: |
+          python -c "
+          from turnos_monitor.config import load_settings
+          s = load_settings()
+          print(f'Config OK — destinatario: {s.notify_email}')
+          "
+
       - name: Chequeo de turnos
         if: steps.cmd.outputs.value != 'pilot'
         env:

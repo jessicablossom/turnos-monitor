@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import smtplib
 import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -84,12 +83,5 @@ def run_window_checks(
         if index < checks_count - 1:
             time.sleep(interval_seconds)
 
-    _send_window_summary(settings, results)
+    send_run_summary_email(settings, results)
     return results
-
-
-def _send_window_summary(settings: Settings, results: list[CheckResult]) -> None:
-    try:
-        send_run_summary_email(settings, results)
-    except (smtplib.SMTPException, OSError) as error:
-        logger.error("Error al enviar email de resumen: %s", error)

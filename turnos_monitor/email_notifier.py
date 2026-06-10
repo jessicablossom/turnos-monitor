@@ -16,6 +16,7 @@ from turnos_monitor.check_result import (
     has_available_turnos,
 )
 from turnos_monitor.config import Settings
+from turnos_monitor.constants import SMTP_TIMEOUT_SECONDS
 from turnos_monitor.types import PuntoAtencion
 
 logger = logging.getLogger(__name__)
@@ -80,16 +81,32 @@ def _send_email(
     message.attach(MIMEText(body_text, "plain", "utf-8"))
     message.attach(MIMEText(body_html, "html", "utf-8"))
 
-    logger.info("Enviando email a %s", settings.notify_email)
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+    logger.info(
+        "Enviando email desde %s a %s vía %s:%d",
+        settings.smtp_user,
+        settings.notify_email,
+        settings.smtp_host,
+        settings.smtp_port,
+    )
+    with smtplib.SMTP(
+        settings.smtp_host,
+        settings.smtp_port,
+        timeout=SMTP_TIMEOUT_SECONDS,
+    ) as server:
+        server.ehlo()
         server.starttls()
+        server.ehlo()
         server.login(settings.smtp_user, settings.smtp_password)
-        server.sendmail(
+        refused = server.sendmail(
             settings.smtp_user,
             [settings.notify_email],
             message.as_string(),
         )
-    logger.info("Email enviado correctamente")
+        if refused:
+            raise smtplib.SMTPException(
+                f"SMTP rechazó destinatarios: {refused}"
+            )
+    logger.info("Email enviado correctamente a %s", settings.notify_email)
 
 
 def send_availability_email(

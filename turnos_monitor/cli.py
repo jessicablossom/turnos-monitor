@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import smtplib
 import sys
 from datetime import datetime
 
@@ -59,10 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _run_once_with_summary(settings: Settings) -> None:
     result = run_single_check(settings, index=1, total=1)
-    try:
-        send_run_summary_email(settings, [result])
-    except (smtplib.SMTPException, OSError) as error:
-        logging.error("Error al enviar email de resumen: %s", error)
+    send_run_summary_email(settings, [result])
 
 
 def main(argv: list[str] | None = None) -> int:

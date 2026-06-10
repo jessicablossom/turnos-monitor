@@ -40,7 +40,12 @@ class TestEmailNotifier(unittest.TestCase):
             [{"nombre": "Milán", "direccion": "Via X", "localidad": "Milán"}],
         )
 
-        mock_smtp_class.assert_called_once_with("smtp.gmail.com", 587)
+        mock_smtp_class.assert_called_once_with(
+            "smtp.gmail.com",
+            587,
+            timeout=30,
+        )
+        mock_server.ehlo.assert_called()
         mock_server.starttls.assert_called_once()
         mock_server.login.assert_called_once_with("user@gmail.com", "secret")
         mock_server.sendmail.assert_called_once()
