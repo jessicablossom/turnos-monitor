@@ -40,7 +40,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub.add_parser(
         "daemon",
-        help="Proceso 24/7; dispara la ventana cada día a las 00:00 (Europe/Rome)",
+        help="Proceso 24/7; un chequeo cada lunes a las 00:00 (Europe/Rome)",
     )
 
     run_if = sub.add_parser(

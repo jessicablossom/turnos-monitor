@@ -1,12 +1,12 @@
 # turnos-monitor
 
-Python app that polls the Argentina consulate appointment API **daily from 00:00 to 01:00** (`Europe/Rome`) **every 5 minutes** and, when the run finishes, sends a **summary email** listing each check and its result (available, unavailable, or API error).
+Python app that polls the Argentina consulate appointment API **once a week** (Mondays at 00:00 `Europe/Rome`) and sends a **summary email** with the check result (available, unavailable, or API error).
 
 **Default target:** Milan consulate (`tramiteId=3354`, `provincia=100`, `localidad=2911`).
 
 ## Deploy (GitHub Actions)
 
-Workflow: [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-monitor.yml) — runs at **00:00 Europe/Rome** and executes the 1-hour check window.
+Workflow: [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-monitor.yml) — runs **every Monday at 00:00 Europe/Rome** with a single check (`once`).
 
 **Secrets** (Settings → Environments → **LIVE** → Environment secrets):
 
@@ -16,7 +16,7 @@ Workflow: [`.github/workflows/turnos-monitor.yml`](.github/workflows/turnos-moni
 | `SMTP_PASSWORD` | [Gmail app password](https://myaccount.google.com/apppasswords) |
 | `NOTIFY_EMAIL` | *(optional)* Recipient; defaults to `SMTP_USER` if unset |
 
-**Manual run:** Actions → **Turnos monitor** → **Run workflow** → `pilot` (API only), `once`, or `window`.
+**Manual run:** Actions → **Turnos monitor** → **Run workflow** → `once` (default), `pilot` (API only), or `window` (legacy: 12 checks over 1 h).
 
 ## Local setup
 

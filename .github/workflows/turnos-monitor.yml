@@ -2,19 +2,19 @@ name: Turnos monitor
 
 on:
   schedule:
-    # 00:00 hora de Roma (CET/CEST automático)
-    - cron: "0 0 * * *"
+    # Lunes 00:00 hora de Roma (CET/CEST automático) — 1 chequeo semanal
+    - cron: "0 0 * * 1"
       timezone: Europe/Rome
   workflow_dispatch:
     inputs:
       command:
         description: Comando a ejecutar
         required: true
-        default: window
+        default: once
         type: choice
         options:
-          - window
           - once
+          - window
           - pilot
 
 concurrency:
@@ -25,8 +25,7 @@ jobs:
   monitor:
     runs-on: ubuntu-latest
     environment: LIVE
-    # window = 12 chequeos × 5 min ≈ 55 min de espera + llamadas API
-    timeout-minutes: 90
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -48,7 +47,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "value=${{ github.event.inputs.command }}" >> "$GITHUB_OUTPUT"
           else
-            echo "value=window" >> "$GITHUB_OUTPUT"
+            echo "value=once" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Prueba piloto (sin SMTP)
