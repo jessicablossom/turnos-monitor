@@ -2,20 +2,19 @@ name: Turnos monitor
 
 on:
   schedule:
-    # Lunes 00:00 hora de Roma (CET/CEST automático) — 1 chequeo semanal
-    - cron: "0 0 * * 1"
+    # 00:00 hora de Roma — 1 chequeo; en modo weekly solo corre los lunes
+    - cron: "0 0 * * *"
       timezone: Europe/Rome
   workflow_dispatch:
     inputs:
-      command:
-        description: Comando a ejecutar
+      frequency:
+        description: Frecuencia del chequeo
         required: true
-        default: once
+        default: daily
         type: choice
         options:
-          - once
-          - window
-          - pilot
+          - daily
+          - weekly
 
 concurrency:
   group: turnos-monitor
@@ -41,21 +40,42 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Resolve command
-        id: cmd
+      - name: Resolver frecuencia
+        id: freq
+        env:
+          MONITOR_FREQUENCY: ${{ vars.MONITOR_FREQUENCY }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "value=${{ github.event.inputs.command }}" >> "$GITHUB_OUTPUT"
+            echo "value=${{ github.event.inputs.frequency }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "$MONITOR_FREQUENCY" ]; then
+            echo "value=$MONITOR_FREQUENCY" >> "$GITHUB_OUTPUT"
           else
-            echo "value=once" >> "$GITHUB_OUTPUT"
+            echo "value=daily" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Prueba piloto (sin SMTP)
-        if: steps.cmd.outputs.value == 'pilot'
-        run: python -m turnos_monitor pilot
+      - name: Evaluar si corresponde correr
+        id: should_run
+        env:
+          TIMEZONE: Europe/Rome
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ steps.freq.outputs.value }}" = "weekly" ]; then
+            DOW=$(TZ="$TIMEZONE" date +%u)
+            if [ "$DOW" != "1" ]; then
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              echo "Modo semanal: hoy no es lunes, salteando"
+              exit 0
+            fi
+          fi
+
+          echo "run=true" >> "$GITHUB_OUTPUT"
 
       - name: Validar secrets SMTP
-        if: steps.cmd.outputs.value != 'pilot'
+        if: steps.should_run.outputs.run == 'true'
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
@@ -69,24 +89,28 @@ jobs:
           fi
 
       - name: Validar configuración SMTP
-        if: steps.cmd.outputs.value != 'pilot'
+        if: steps.should_run.outputs.run == 'true'
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          CONSULATE: ${{ vars.CONSULATE }}
+          MONITOR_FREQUENCY: ${{ steps.freq.outputs.value }}
           TIMEZONE: Europe/Rome
         run: |
           python -c "
           from turnos_monitor.config import load_settings
           s = load_settings()
-          print(f'Config OK — destinatario: {s.notify_email}')
+          print(f'Config OK — consulado: {s.consulate_label}, destinatario: {s.notify_email}, frecuencia: {s.monitor_frequency}')
           "
 
       - name: Chequeo de turnos
-        if: steps.cmd.outputs.value != 'pilot'
+        if: steps.should_run.outputs.run == 'true'
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          CONSULATE: ${{ vars.CONSULATE }}
+          MONITOR_FREQUENCY: ${{ steps.freq.outputs.value }}
           TIMEZONE: Europe/Rome
-        run: python -m turnos_monitor ${{ steps.cmd.outputs.value }}
+        run: python -m turnos_monitor once

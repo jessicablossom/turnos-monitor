@@ -61,6 +61,8 @@ def _build_summary_intro(results: list[CheckResult], settings: Settings) -> str:
         status = "Resultado negativo: no hay turnos disponibles."
     return (
         f"{status}\n\n"
+        f"Consulado: {settings.consulate_label}\n"
+        f"Trámite: {settings.tramite_label}\n"
         f"Zona horaria: {settings.timezone}\n"
         f"Finalizado: {now}\n"
         f"Consultas realizadas: {checks}\n\n"

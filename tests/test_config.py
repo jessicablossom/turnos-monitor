@@ -26,6 +26,52 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(settings.notify_email, "dest@test.com")
         self.assertEqual(settings.api_params["tramiteId"], 3354)
 
+    def test_consulate_rome_resolves_api_params(self) -> None:
+        previous = patch_env(
+            SMTP_USER="sender@test.com",
+            SMTP_PASSWORD="app-pass",
+            CONSULATE="rome",
+        )
+        try:
+            with patch("turnos_monitor.config.load_dotenv"):
+                settings = load_settings()
+        finally:
+            restore_env(previous)
+
+        self.assertEqual(settings.consulate_key, "rome")
+        self.assertEqual(settings.consulate_label, "Consulado General en Roma")
+        self.assertIn("Licencia Conducir", settings.tramite_label)
+        self.assertEqual(settings.api_params["tramiteId"], 3219)
+        self.assertEqual(settings.api_params["provincia"], 67)
+        self.assertEqual(settings.api_params["localidad"], 2875)
+
+    def test_monitor_frequency_defaults_to_daily(self) -> None:
+        previous = patch_env(
+            SMTP_USER="sender@test.com",
+            SMTP_PASSWORD="app-pass",
+        )
+        try:
+            with patch("turnos_monitor.config.load_dotenv"):
+                settings = load_settings()
+        finally:
+            restore_env(previous)
+
+        self.assertEqual(settings.monitor_frequency, "daily")
+
+    def test_monitor_frequency_accepts_weekly(self) -> None:
+        previous = patch_env(
+            SMTP_USER="sender@test.com",
+            SMTP_PASSWORD="app-pass",
+            MONITOR_FREQUENCY="weekly",
+        )
+        try:
+            with patch("turnos_monitor.config.load_dotenv"):
+                settings = load_settings()
+        finally:
+            restore_env(previous)
+
+        self.assertEqual(settings.monitor_frequency, "weekly")
+
     def test_notify_email_defaults_when_secret_empty(self) -> None:
         previous = patch_env(
             SMTP_USER="sender@test.com",

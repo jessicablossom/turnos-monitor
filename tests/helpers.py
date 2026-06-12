@@ -28,10 +28,14 @@ MILAN_API_SAMPLE: dict[str, Any] = {
 def make_settings(**overrides: Any) -> Settings:
     defaults = {
         "api_url": "https://example.com/api",
+        "consulate_key": "milan",
+        "consulate_label": "Consulado General en Milán",
+        "tramite_label": "Certificado Consular Conversión Licencia Conducir",
         "tramite_id": 3354,
         "provincia": 100,
         "localidad": 2911,
         "timezone": "Europe/Rome",
+        "monitor_frequency": "daily",
         "notify_email": "test@example.com",
         "smtp_host": "smtp.gmail.com",
         "smtp_port": 587,

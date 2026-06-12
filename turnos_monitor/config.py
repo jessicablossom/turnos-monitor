@@ -5,23 +5,27 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
-from turnos_monitor.constants import (
-    DEFAULT_API_URL,
-    DEFAULT_LOCALIDAD,
-    DEFAULT_PROVINCIA,
-    DEFAULT_TIMEZONE,
-    DEFAULT_TRAMITE_ID,
-)
+from turnos_monitor.consulates import DEFAULT_CONSULATE_KEY, resolve_consulate
+from turnos_monitor.constants import DEFAULT_API_URL, DEFAULT_TIMEZONE
 from turnos_monitor.env_utils import env_or_default
+from turnos_monitor.monitor_frequency import (
+    DEFAULT_MONITOR_FREQUENCY,
+    MonitorFrequency,
+    parse_monitor_frequency,
+)
 
 
 @dataclass(frozen=True)
 class Settings:
     api_url: str
+    consulate_key: str
+    consulate_label: str
+    tramite_label: str
     tramite_id: int
     provincia: int
     localidad: int
     timezone: str
+    monitor_frequency: MonitorFrequency
     notify_email: str
     smtp_host: str
     smtp_port: int
@@ -58,6 +62,29 @@ def _smtp_missing_message(smtp_user: str, smtp_password: str) -> str:
     )
 
 
+def _resolve_api_target() -> tuple[str, str, str, int, int, int]:
+    consulate = resolve_consulate(
+        env_or_default("CONSULATE", DEFAULT_CONSULATE_KEY)
+    )
+    tramite_id = int(
+        env_or_default("TRAMITE_ID", str(consulate.tramite_id))
+    )
+    provincia = int(
+        env_or_default("PROVINCIA", str(consulate.provincia))
+    )
+    localidad = int(
+        env_or_default("LOCALIDAD", str(consulate.localidad))
+    )
+    return (
+        consulate.key,
+        consulate.label,
+        consulate.tramite_label,
+        tramite_id,
+        provincia,
+        localidad,
+    )
+
+
 def load_settings(env_path: str | None = None) -> Settings:
     load_dotenv(env_path)
 
@@ -73,12 +100,27 @@ def load_settings(env_path: str | None = None) -> Settings:
             "o usá SMTP_USER como destinatario."
         )
 
+    (
+        consulate_key,
+        consulate_label,
+        tramite_label,
+        tramite_id,
+        provincia,
+        localidad,
+    ) = _resolve_api_target()
+
     return Settings(
         api_url=env_or_default("API_URL", DEFAULT_API_URL),
-        tramite_id=int(env_or_default("TRAMITE_ID", str(DEFAULT_TRAMITE_ID))),
-        provincia=int(env_or_default("PROVINCIA", str(DEFAULT_PROVINCIA))),
-        localidad=int(env_or_default("LOCALIDAD", str(DEFAULT_LOCALIDAD))),
+        consulate_key=consulate_key,
+        consulate_label=consulate_label,
+        tramite_label=tramite_label,
+        tramite_id=tramite_id,
+        provincia=provincia,
+        localidad=localidad,
         timezone=env_or_default("TIMEZONE", DEFAULT_TIMEZONE),
+        monitor_frequency=parse_monitor_frequency(
+            env_or_default("MONITOR_FREQUENCY", DEFAULT_MONITOR_FREQUENCY)
+        ),
         notify_email=notify_email,
         smtp_host=env_or_default("SMTP_HOST", "smtp.gmail.com"),
         smtp_port=int(env_or_default("SMTP_PORT", "587")),

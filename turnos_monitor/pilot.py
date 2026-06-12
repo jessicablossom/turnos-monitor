@@ -12,12 +12,10 @@ from turnos_monitor.api import (
     find_available_points,
     parse_availability,
 )
-from turnos_monitor.constants import (
-    DEFAULT_API_URL,
-    DEFAULT_LOCALIDAD,
-    DEFAULT_PROVINCIA,
-    DEFAULT_TRAMITE_ID,
-)
+from turnos_monitor.consulates import DEFAULT_CONSULATE_KEY, resolve_consulate
+from turnos_monitor.constants import DEFAULT_API_URL
+
+_DEFAULT_CONSULATE = resolve_consulate(DEFAULT_CONSULATE_KEY)
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +35,9 @@ class PilotResult:
 
 def run_pilot(
     api_url: str = DEFAULT_API_URL,
-    tramite_id: int = DEFAULT_TRAMITE_ID,
-    provincia: int = DEFAULT_PROVINCIA,
-    localidad: int = DEFAULT_LOCALIDAD,
+    tramite_id: int = _DEFAULT_CONSULATE.tramite_id,
+    provincia: int = _DEFAULT_CONSULATE.provincia,
+    localidad: int = _DEFAULT_CONSULATE.localidad,
     session: requests.Session | None = None,
 ) -> PilotResult:
     params = {

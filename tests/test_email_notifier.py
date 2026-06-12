@@ -32,6 +32,7 @@ class TestEmailNotifier(unittest.TestCase):
     @patch("turnos_monitor.email_notifier.smtplib.SMTP")
     def test_send_availability_email(self, mock_smtp_class: MagicMock) -> None:
         mock_server = MagicMock()
+        mock_server.sendmail.return_value = {}
         mock_smtp_class.return_value.__enter__.return_value = mock_server
         settings = make_settings(notify_email="jessica@test.com")
 

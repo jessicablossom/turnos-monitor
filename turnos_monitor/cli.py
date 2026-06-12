@@ -3,14 +3,12 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from datetime import datetime
 
 from turnos_monitor.checker import run_single_check
 from turnos_monitor.config import Settings, load_settings
 from turnos_monitor.email_notifier import send_run_summary_email
 from turnos_monitor.pilot import format_pilot_report, run_pilot
 from turnos_monitor.scheduler_app import start_scheduler
-from turnos_monitor.window import is_within_daily_window, run_window_checks
 
 
 def configure_logging(verbose: bool) -> None:
@@ -29,28 +27,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-v", "--verbose", action="store_true")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("once", help="Un solo chequeo ahora")
+    sub.add_parser("once", help="Un solo chequeo ahora + email de resumen")
     sub.add_parser(
         "pilot",
         help="Prueba piloto: consulta la API y muestra la respuesta (sin email)",
     )
     sub.add_parser(
-        "window",
-        help="Ventana de 1 h con chequeos cada 5 min (para cron)",
-    )
-    sub.add_parser(
         "daemon",
-        help="Proceso 24/7; un chequeo cada lunes a las 00:00 (Europe/Rome)",
-    )
-
-    run_if = sub.add_parser(
-        "run-if-window",
-        help="Ejecuta ventana solo si estamos entre 00:00 y 01:00 hora local",
-    )
-    run_if.add_argument(
-        "--force",
-        action="store_true",
-        help="Ignorar comprobación horaria (útil para pruebas)",
+        help="Proceso 24/7; un chequeo según MONITOR_FREQUENCY (00:00 Europe/Rome)",
     )
 
     return parser
@@ -83,18 +67,6 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "once":
         _run_once_with_summary(settings)
-        return 0
-
-    if args.command == "window":
-        run_window_checks(settings)
-        return 0
-
-    if args.command == "run-if-window":
-        now = datetime.now()
-        if args.force or is_within_daily_window(now, settings):
-            run_window_checks(settings)
-        else:
-            logging.info("Fuera de la ventana horaria; no se ejecuta nada")
         return 0
 
     if args.command == "daemon":
